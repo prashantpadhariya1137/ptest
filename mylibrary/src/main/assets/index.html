@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS Function</title>
+<!--    <script type="text/javascript">-->
+<!--        function sumTwoNumbers(a, b) {-->
+<!--            var sum = a + b;-->
+<!--            // Pass the result back to Android-->
+<!--            AndroidFunction.handleResultFromJS(sum.toString());-->
+<!--        }-->
+<!--    </script>-->
+
+    <script src="file:///android_asset/sip.min.js"></script>
+
+    <script type="text/javascript">
+        function makeSipCall(username, password, domain) {
+            if (typeof SIP === 'undefined') {
+                console.error('SIP.js library not loaded!');
+                AndroidFunction.handleResultFromJS('SIP.js library not loaded!');
+                return;
+            }
+
+            const uri = SIP.UserAgent.makeURI(`sip:${username}@${domain}`);
+
+            const userAgentOptions = {
+                authorizationPassword: password,
+                authorizationUsername: username,
+                transportOptions: {
+                    server: `wss://osipmidregi.astppbilling.org:7443/`,  // Assuming wss transport
+                    traceSip: true,
+                },
+                uri: uri,
+                register: true,
+                logBuiltinEnabled: true,
+            };
+
+            const userAgent = new SIP.UserAgent(userAgentOptions);
+            let registerStatus = '';
+
+                console.error('SIP.js useragent start!');
+
+            userAgent.start().then(() => {
+                const registerer = new SIP.Registerer(userAgent);
+
+                registerer.stateChange.addListener((state) => {
+                    switch (state) {
+                        case SIP.RegistererState.Registered:
+                            registerStatus = 'Registered';
+                            break;
+                        case SIP.RegistererState.Unregistered:
+                            registerStatus = 'Unregistered';
+                            break;
+                        case SIP.RegistererState.Terminated:
+                            registerStatus = 'Terminated';
+                            break;
+                        default:
+                            registerStatus = 'Unknown';
+                            break;
+                    }
+                    // Send result to Android
+                    AndroidFunction.handleResultFromJS(`Register status: ${registerStatus}`);
+                });
+
+               console.error('SIP.js useragent start 11!');
+
+                registerer.register().catch((error) => {
+                    console.error('SIP.js useragent start 22!');
+
+                    AndroidFunction.handleResultFromJS('Call failed: ' + error.message);
+                });
+            }).catch((error) => {
+                    console.error('SIP.js useragent start 23!',error);
+                    });
+        }
+    </script>
+
+
+</head>
+<body>
+<h1>Call JS from Android</h1>
+</body>
+</html>
